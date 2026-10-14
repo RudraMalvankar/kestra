@@ -101,13 +101,11 @@ public class LogController {
     @ExecuteOn(TaskExecutors.IO)
     @Get(uri = "/{executionId}")
     @Operation(tags = { "Logs" }, summary = "Get logs for a specific execution, taskrun or task")
-    public List<LogEntry> listLogsFromExecution(
+    public Flux<LogEntry> listLogsFromExecution(
         @Parameter(description = "The execution id") @PathVariable String executionId,
         @Parameter(description = "Filters") @Nullable @QueryFilterFormat(Resource.LOG) List<QueryFilter> filters) {
-        return logRepository
-            .findAsync(tenantService.resolveTenant(), buildExecutionFilters(executionId, filters))
-            .collectList()
-            .block();
+        // streamed rather than collectList().block(): a long-running execution can have millions of log lines
+        return logRepository.findAsync(tenantService.resolveTenant(), buildExecutionFilters(executionId, filters));
     }
 
     @ExecuteOn(TaskExecutors.IO)
